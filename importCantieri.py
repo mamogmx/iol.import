@@ -18,8 +18,9 @@ if "app" in locals():
     # Use Zope application server user database (not plone site)
     admin=app.acl_users.getUserById("admin")
     newSecurityManager(None, admin)
-    res = setStatus(app)
-    print res
+    #Your code here
+
+    #Transaction Commit 
     import transaction;
     transaction.commit()
     # Perform ZEO client synchronization (if running in clustered mode)
