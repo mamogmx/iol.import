@@ -9,7 +9,6 @@ from Products.CMFPlomino.PlominoUtils import DateToString,Now,StringToDate
 from Products.CMFCore.utils import getToolByName
 from AccessControl.SecurityManagement import newSecurityManager
 from mimetypes import MimeTypes
-import dizImportazioneCantieri
 conn_string = "postgres://postgres:postgres@192.168.1.133:5433/sitar"
 
 keysCantieri=['id','numero','username','istruttore','data_presentazione','protocollo','data_protocollo','oggetto','prescrizioni','note','stato_istanze','datainizio','datafine','orario','rinnovoinsanatoria','onerosa','ricevuta','cauzione','ricevutacauzione','svincolo','importo','cognome','nome','indirizzo','comune','prov','cap','telefono','email','comunato','provnato','datanato','sesso','codfis','ragsoc','titolod','sede','comuned','provd','capd','piva','convenzione','data_pagamento','datainizio_eff','datafine_eff','note_utente','motivo_sospensione','n_autorizzazione','data_autorizzazione']
