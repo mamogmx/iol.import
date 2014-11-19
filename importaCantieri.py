@@ -29,7 +29,7 @@ def findData(app):
     for r in cantieri:
         data = dict()
         data['elementi_scavo_dg'] = list()
-        sql = "SELECT 0 as tipologia_occupazione,'empty' as elemento_descrizione, lunghezza as occupazione_lunghezza , larghezza as occupazione_larghezza, zona as elemento_zona FROM istanze_cantieri.elementi WHERE istanza='%s'" %r['id']
+        query = "SELECT 0 as tipologia_occupazione,'empty' as elemento_descrizione, lunghezza as occupazione_lunghezza , larghezza as occupazione_larghezza, zona as elemento_zona FROM istanze_cantieri.elementi WHERE istanza='%s'" %r['id']
         res = connection.execute(query)
         elementi = res.fetchAll()
         for el in elementi.values():
