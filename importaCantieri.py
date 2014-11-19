@@ -110,7 +110,7 @@ def populateDB(app):
         # Setting Items on Document
         for key,val in data.iteritems():
             if key == 'elementi_scavo_dg':
-                doc.setItem(key,val.values())
+                doc.setItem(key,val)
             else:
                 doc.setItem(key,val)
         # Setting Ownership
@@ -125,9 +125,12 @@ def populateDB(app):
         for wf in wfInfo:
             if wf['action'] in mappingWF:
                 for tr in mappingWF[wf['action']]:
-                    pass
-        
-        
+                    try:
+                        state = api.content.transition(obj=doc, transition=tr)
+                    except Exception as e:
+                        print "Errore Transizione su documento %s : %s " %(id,str(e))
+        if i > 10:
+            return 1
 def findData(app):
     psite = app.unrestrictedTraverse("istanze")
 
@@ -179,7 +182,7 @@ if "app" in locals():
     # Use Zope application server user database (not plone site)
     admin=app.acl_users.getUserById("admin")
     newSecurityManager(None, admin)
-    res = findData(app)
+    res = populateDB(app)
 
     import transaction;
     transaction.commit()
