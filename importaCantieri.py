@@ -24,14 +24,14 @@ def findData(app):
     connection = engine.connect()
     query = "SELECT * FROM istanze_cantieri.istanze"
     res = connection.execute(query)
-    cantieri = res.fetchAll()
+    cantieri = res.fetchall()
     result = list()
     for r in cantieri:
         data = dict()
         data['elementi_scavo_dg'] = list()
         query = "SELECT 0 as tipologia_occupazione,'empty' as elemento_descrizione, lunghezza as occupazione_lunghezza , larghezza as occupazione_larghezza, zona as elemento_zona FROM istanze_cantieri.elementi WHERE istanza='%s'" %r['id']
         res = connection.execute(query)
-        elementi = res.fetchAll()
+        elementi = res.fetchall()
         for el in elementi.values():
             data['elementi_scavo_dg'].append(el)
         for key,val in r.iteritems():
