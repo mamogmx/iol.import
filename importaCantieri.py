@@ -12,8 +12,10 @@ from Products.CMFCore.utils import getToolByName
 from AccessControl.SecurityManagement import newSecurityManager
 from mimetypes import MimeTypes
 from plone import api
+from Products.CMFCore.WorkflowCore import WorkflowException
 
-conn_string = "postgres://postgres:postgres@192.168.1.133:5433/sitar"
+
+conn_string = "postgres://postgres:postgres@192.168.1.71:5435/sitar"
 
 engine = sql.create_engine(conn_string)
 connection = engine.connect()
@@ -27,6 +29,7 @@ for i in range(len(valuesCantieri)):
 
 mappingWF=dict(
     assegnazione_ri = ['protocolla','invia_domanda','assegna'],
+    start_istruttore = ['protocolla','invia_domanda','assegna'],
     sospensione = ['sospendi'],
     integrazione = ['integra'],
     istruttoria_no = ['preavviso_rigetto'],
@@ -97,40 +100,49 @@ def saveData(d,db):
 def populateDB(app):
     psite = app.unrestrictedTraverse("istanze")
     plominodb = psite.iol_cantieri
-    query = "SELECT * FROM istanze.occupazione_suolo"
+    workflowTool = getToolByName(psite, "portal_workflow")
+    query = "SELECT * FROM istanze.occupazione_suolo order by id"
     res = connection.execute(query)
     cantieri = res.fetchall()
     i = 0
     for r in cantieri:
         i+=1
+        
         info = dict(r)
-        data = json.loads(info['data'])
-        doc = plominodb.createDocument(data['id'])
+        data = info['data']
+        id = info['id']
+        doc = plominodb.createDocument()
         doc.setItem('Form','frm_cantieri_base')
         # Setting Items on Document
         for key,val in data.iteritems():
             if key == 'elementi_scavo_dg':
-                doc.setItem(key,val)
+                res = list()
+                for v in val:
+                    res.append([v['tipologia_occupazione'],v['elemento_descrizione'],v['occupazione_lunghezza'],v['occupazione_larghezza'],v['elemento_zona']])
+                doc.setItem(key,res)
             else:
                 doc.setItem(key,val)
         # Setting Ownership
-        if data['owner']:
-            user = api.user.get(username=data['owner'])
-            doc.changeOwnership(user, recursive=False)
+        if info['owner']:
+            mt = getToolByName(psite, 'portal_membership')
+            member = mt.getMemberById(info['owner'])
+            doc.changeOwnership(member, recursive=False)
         # Setting Roles
             #doc.manage_setLocalRoles([], ["iol-reviewer",])
             #doc.manage_setLocalRoles([], ["iol-manager",])
         #Apply Workflow
-        wfInfo = json.loads(data['review_history'])
+
+        wfInfo = info['review_history']
         for wf in wfInfo:
+            print "considero %s:" %wf['action']
             if wf['action'] in mappingWF:
                 for tr in mappingWF[wf['action']]:
                     try:
-                        state = api.content.transition(obj=doc, transition=tr)
-                    except Exception as e:
-                        print "Errore Transizione su documento %s : %s " %(id,str(e))
-        if i > 10:
-            return 1
+                        workflowTool.doActionFor(doc, tr)
+                    except WorkflowException as e:
+                        print "Errore Transizione %s su documento %s : %s " %(tr,id,str(e))
+        print "Documento %d importato" %i
+    return 1    
 def findData(app):
     psite = app.unrestrictedTraverse("istanze")
 
