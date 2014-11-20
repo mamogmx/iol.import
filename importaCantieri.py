@@ -111,7 +111,7 @@ def populateDB(app):
         info = dict(r)
         data = info['data']
         id = info['id']
-        doc = plominodb.createDocument()
+        doc = plominodb.createDocument(id)
         doc.setItem('Form','frm_cantieri_base')
         # Setting Items on Document
         for key,val in data.iteritems():
@@ -139,6 +139,7 @@ def populateDB(app):
                 for tr in mappingWF[wf['action']]:
                     try:
                         workflowTool.doActionFor(doc, tr)
+                        print "Eseguita transizione %s su documento %s" %(tr,id)
                     except WorkflowException as e:
                         print "Errore Transizione %s su documento %s : %s " %(tr,id,str(e))
         print "Documento %d importato" %i
