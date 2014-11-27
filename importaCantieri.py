@@ -48,7 +48,7 @@ def default(o):
         return o.isoformat()   
    
 class plominoData(object):
-    def __init__(self, id, plominodb, form, owner, url, review_state, review_history, data):
+    def __init__(self, id, plominodb, form, owner, url, review_state, review_history,iol_owner,iol_reviewer,iol_manager, data):
         self.id = id
         self.plominoform = form
         self.plominodb = plominodb
@@ -56,6 +56,9 @@ class plominoData(object):
         self.review_state = review_state
         self.review_history = review_history
         self.url = url
+        self.iol_owner = iol_owner
+        self.iol_reviewer = iol_reviewer
+        self.iol_manager = iol_manager
         self.data = data   
 
         
@@ -114,7 +117,7 @@ def getDocuments(doc):
         print "\tRecuperati %s file su %s" %(i,tot)
     return 1
     
-def importAutorizzazioni(app):
+def importDocuments(app):
     psite = app.unrestrictedTraverse("istanze")
     plominodb = psite.iol_cantieri
     j = 0
@@ -171,7 +174,7 @@ def populateDB(app):
     
     #RECUPERO INFORMAZIONI SUI DATI DA IMPORTARE
     #DATI SU DB
-    query = "SELECT * FROM istanze_cantieri.import_istanze order by numero DESC LIMIT 2000"
+    query = "SELECT * FROM istanze_cantieri.import_istanze order by numero DESC"
     res = connection.execute(query)
     cantieri = res.fetchall()
     result = list()
@@ -203,7 +206,7 @@ def populateDB(app):
         for key,val in cantiere.iteritems():
             if key in cantieriDict.keys():
                 data[cantieriDict[key]] = val
-
+        data['search_richiedente'] = '%s %s %s' %(cantieri['cognome'],cantieri['nome'],cantieri['ragsoc'] or '')
         data['iol_tipo_app'] = 'cantieri'
         data['iol_tipo_richiesta'] = 'base'
         data['iol_tipo_pratica'] = 'cantieri_base'
@@ -218,6 +221,9 @@ def populateDB(app):
                 url = None,
                 review_state = info['review_state'],
                 review_history = info['review_history'],
+                iol_owner = [data['owner']],
+                iol_reviewer = ['istruttori-cantieri'],
+                iol_manager = ['rup-cantieri'],
                 data = data
             )
            
