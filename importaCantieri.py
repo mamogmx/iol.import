@@ -299,7 +299,7 @@ if "app" in locals():
     admin=app.acl_users.getUserById("admin")
     
     newSecurityManager(None, admin)
-    res = importAutorizzazioni(app)
+    res = populateDB(app)
 
     import transaction;
     transaction.commit()
