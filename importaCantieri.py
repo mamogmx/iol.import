@@ -94,7 +94,7 @@ def saveData(d,db):
     Sess = orm.sessionmaker(bind = db)
     session = Sess()
     data = json.loads(json.dumps(d, default=default,use_decimal=True ))
-    row = plominoData(data['id'],data['plominodb'],data['plominoform'],data['owner'],data["url"], data["review_state"], data["review_history"],data['data'])
+    row = plominoData(data['id'],data['plominodb'],data['plominoform'],data['owner'],data["url"], data["review_state"], data["review_history"],data['iol_owner'],data['iol_reviewer'],data['iol_manager'],data['data'])
     session.add(row)
     session.commit()
     session.close()
