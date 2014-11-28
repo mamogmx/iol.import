@@ -207,7 +207,7 @@ def populateDB(app):
             if key in cantieriDict.keys():
                 data[cantieriDict[key]] = val
         data['search_richiedente'] = '%s %s %s' %(cantiere['cognome'],cantiere['nome'],cantiere['ragsoc'])
-        data['geometry'] = getGeometry(conn_string_sit,id)
+        data['geometry'] = getGeometry(connection,id)
         if  data['geometry']>0:
             tipo = 'punto'
         else:
