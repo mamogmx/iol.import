@@ -245,7 +245,7 @@ def populateDB(app):
                     else:
                         if not key in ['Form']:
                             doc.setItem(key,val)
-            doc.setItem('Form','frm_cantieri_base')
+            doc.setItem('Form','form_vuoto')
             # Setting Items on Document
             for key,val in data.iteritems():
                 if key == 'elementi_scavo_dg':
