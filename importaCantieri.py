@@ -121,10 +121,18 @@ def importDocuments(app):
     psite = app.unrestrictedTraverse("istanze")
     plominodb = psite.iol_cantieri
     j = 0
-    for doc in plominodb.getAllDocuments():
+    listDocs = plominodb.getAllDocuments()
+    tot = len(listDocs)
+    for doc in listDocs:
         j += 1
-        print "%d) Documento %s" %(j,doc.getId())
+        print "%d) Documento %s %d su %d" %(j,doc.getId(),j,tot)
         getDocuments(doc)
+        plominodb.getIndex().indexDocument(doc)
+        print '\t Indicizzazione del Documento'
+
+        doc.setItem('Form','frm_cantieri_base')
+        doc.setItem('documenti_autorizzazione',{'autorizzazione.pdf':'application/pdf'})
+
     return 1
     
 def geomUpdateDoc(app):
@@ -299,8 +307,8 @@ if "app" in locals():
     admin=app.acl_users.getUserById("admin")
     
     newSecurityManager(None, admin)
-    res = populateDB(app)
-
+    #res = populateDB(app)
+    importDocuments(app)
     import transaction;
     transaction.commit()
     # Perform ZEO client synchronization (if running in clustered mode)
