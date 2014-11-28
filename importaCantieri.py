@@ -28,8 +28,8 @@ for i in range(len(valuesCantieri)):
    cantieriDict[keysCantieri[i]]=valuesCantieri[i]
 
 mappingWF=dict(
-    assegnazione_ri = ['invia_domanda','assegna'],
-    start_istruttore = ['invia_domanda','assegna'],
+    assegnazione_ri = ['protocolla','invia_domanda','assegna'],
+    start_istruttore = ['protocolla','invia_domanda','assegna'],
     sospensione = ['sospendi'],
     integrazione = ['integra'],
     istruttoria_no = ['preavviso_rigetto'],
