@@ -13,9 +13,10 @@ from AccessControl.SecurityManagement import newSecurityManager
 from mimetypes import MimeTypes
 from plone import api
 from Products.CMFCore.WorkflowCore import WorkflowException
+from gisweb.iol.pgReplication import saveData
 
 
-conn_string_iol = "postgres://postgres:postgres@192.168.1.134:5434/sitar"
+conn_string_iol = "postgres://postgres:postgres@192.168.1.133:5433/sitar"
 
 def getData():
     query = """
@@ -29,7 +30,7 @@ with attivita as (SELECT "IDPratica" as idpratica, "Numero" as numero_pratica, "
        case when("AlleggerimentoStruttura"='0') then 'no' else 'si' end as alleggerimento_struttura, case when("Allerta2"='0') then 'no' else 'si' end as allerta2
   FROM dehor_autorizzazione),
   elementi as (SELECT "IDPratica" as idpratica, "DimensioneOccupazione" as dim_occupazione, case when(not "NumeroBarriere" is null) then 'si' else 'no' end as antivento_opt,"NumeroBarriere" as testo_barriere,  "NumeroFioriere" as testo_fioriere,
-       "NumeroOmbrelloni" as testo_ombrelloni, "Numerotavoli" as testo_tavoli, "TotaleMq" as totalemq,case when(not "Pedana" is null) then 'si' else 'no' end as pedana_opt , "Pedana",case when ("Numerotavoli" ilike '%rampa%') then 'si' else 'no' end as rampa_opt
+       "NumeroOmbrelloni" as testo_ombrelloni, "Numerotavoli" as testo_tavoli, "TotaleMq" as totalemq,case when(not "Pedana" is null) then 'si' else 'no' end as pedana_opt , "Pedana" as testo_pedana,case when ("Numerotavoli" ilike '%%rampa%%') then 'si' else 'no' end as rampa_opt
   FROM dehor_elementi),
   intestazioni as (SELECT "IDPratica" as idpratica,
         regexp_replace(replace(replace(replace("NomeComposto",' AU',''), ' ED',''),' PE',''), '[1*]+', '' ) as search_richiedente,split_part(regexp_replace(replace(replace(replace("NomeComposto",' AU',''), ' ED',''),' PE',''), '[1*]+', '' ),' ',1) as fisica_cognome,
@@ -40,9 +41,10 @@ with attivita as (SELECT "IDPratica" as idpratica, "Numero" as numero_pratica, "
        "CivicoOccupazione" as civico, "DataLicenza"::timestamp as data_licenza, "NumeroLicenza" as numero_licenza, "QualitaRichiedente" as fisica_titolo,
        "TipoLicenza" as tipo_licenza, "DallaData"::timestamp as autorizzata_dal, "AllaData"::timestamp as autorizzata_al, "SupLocali" as superficie_interna, "PeriodoOccupazione"
   FROM dehor_dati),
-  geom as (SELECT idpratica,array_agg('SRID=4326;'||st_astext(st_transform(the_geom,4326))) as geometry from dehor_geom group by idpratica)
+  geom as (SELECT idpratica,array_agg('SRID=4326;'||st_astext(st_transform(the_geom,4326))) as geometry_list from dehor_geom group by idpratica),
+  pagamenti as (SELECT "IDPratica" as idpratica,coalesce(dovuto,0) as dovuto,coalesce(pagato,-1) as pagato FROM dehor_pagamenti)
 
-select * from attivita inner join autorizzazioni using(idpratica) inner join dati using(idpratica) inner join elementi using(idpratica) inner join intestazioni using(idpratica) inner join geom using(idpratica);
+select * from attivita inner join autorizzazioni using(idpratica) inner join dati using(idpratica) inner join elementi using(idpratica) inner join intestazioni using(idpratica) inner join geom using(idpratica) left join pagamenti using(idpratica);
 """
     engine_iol = sql.create_engine(conn_string_iol)
     connection_iol = engine_iol.connect()
@@ -52,7 +54,64 @@ select * from attivita inner join autorizzazioni using(idpratica) inner join dat
 
 def populateDB(app):
     psite = app.unrestrictedTraverse("istanze")
-    r = getData()
+    plominodb = psite.iol_dehor
+    
+    plominodb.deleteDocuments()
+    workflowTool = getToolByName(psite, "portal_workflow")
+    mt = getToolByName(psite, 'portal_membership')
+    pg = getToolByName(psite, 'portal_groups')
+    owner = pg.getGroupById('istruttori-dehor')
+    result = list()
+    i = 1
+    res = getData()
+    tot = len(res)
+    print "Letti %d Dehor" %tot
+    for r in res:
+        dehor = dict(r)
+        doc = plominodb.createDocument()
+        id = doc.getId()
+        print "%d)Preso in considerazione il document %s" %(i,id)
+        doc.setItem('iol_tipo_app','dehor')
+        doc.setItem('iol_tipo_pratica','dehor_base')
+        doc.setItem('iol_tipo_richiesta','base')
+        doc.setItem('Form','frm_vuoto')
+        try:
+            for key,val in dehor.iteritems():
+                if key in ('geometry_list'):
+                    doc.setItem('geometry',val[0])
+                    doc.setItem(key,val)
+                elif key in ('dovuto','pagato'):
+                    doc.setItem('pagamenti_saldo',-1 * ((dehor['dovuto'] or 0) - (dehor['pagato'] or -1)))
+                elif key in ('search_richiedente'):
+                    doc.setItem(key,"%s %s" %(val,dehor['giuridica_denominazione']))
+                else:
+                    if isinstance(val,datetime.datetime):
+                        doc.setItem(key,DateTime.DateTime(val))
+                    else:
+                        doc.setItem(key,val)
+        except Exception as e:
+            print "\t Errore nel salvataggio dei dati del documento %s" %id
+            print str(e)
+        try:
+            doc.changeOwnership(owner, recursive=False)
+            # Setting Roles
+            doc.manage_setLocalRoles('istruttori-dehor', ["iol-reviewer",])
+            doc.manage_setLocalRoles('rup-dehor', ["iol-manager",])
+        except Exception as e:
+            print "\t Errore nel salvataggio dei ruoli del documento %s" %id
+            print str(e)
+        try:
+            workflowTool.doActionFor(doc, 'autorizza_importazione')
+        except Exception as e:
+            print "\t Errore nell'esecuzione del workflow sul documento %s" %id         
+            print str(e)
+        try:
+            saveData(doc)
+            
+        except Exception as e:
+            print "\t Errore nel salvataggio del documento %s" %id
+            print str(e)
+        i += 1
     return r
 
 if "app" in locals():
