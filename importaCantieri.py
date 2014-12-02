@@ -78,13 +78,6 @@ class DateTimeEncoder(json.JSONEncoder):
   
         
         
-def getPlominoInfo():
-    f = open('cantieri.json','r')
-    d = f.read()
-    f.close()
-    data = json.loads(d.replace('\"','"'))
-    return data
-
 def saveData(d,db):
     
     metadata = sql.schema.MetaData(bind=db,reflect=True,schema='istanze')
@@ -99,6 +92,13 @@ def saveData(d,db):
     session.commit()
     session.close()
 
+def getPlominoInfo():
+    f = open('cantieri.json','r')
+    d = f.read()
+    f.close()
+    data = json.loads(d.replace('\"','"'))
+    return data    
+    
 def getDocuments(doc):
     id = doc.getId()
     path = "%s/%s" %(doc_base_path,id)

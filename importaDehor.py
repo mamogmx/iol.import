@@ -13,11 +13,13 @@ from AccessControl.SecurityManagement import newSecurityManager
 from mimetypes import MimeTypes
 from plone import api
 from Products.CMFCore.WorkflowCore import WorkflowException
-from gisweb.iol.pgReplication import saveData
+from pgReplication import *
 
-
-conn_string_iol = "postgres://postgres:postgres@192.168.1.133:5433/sitar"
-
+conn_string_iol = "postgres://postgres:postgres@192.168.1.71:5435/sitar"
+engine_iol = sql.create_engine(conn_string_iol)
+connection_iol = engine_iol.connect()
+    
+        
 def getData():
     query = """
 with attivita as (SELECT "IDPratica" as idpratica, "Numero" as numero_pratica, "Protocollo" as numero_protocollo, "DataRegistrazione"::timestamp as data_pratica, "DataAvvio"::timestamp as data_protocollo,
@@ -46,8 +48,7 @@ with attivita as (SELECT "IDPratica" as idpratica, "Numero" as numero_pratica, "
 
 select * from attivita inner join autorizzazioni using(idpratica) inner join dati using(idpratica) inner join elementi using(idpratica) inner join intestazioni using(idpratica) inner join geom using(idpratica) left join pagamenti using(idpratica);
 """
-    engine_iol = sql.create_engine(conn_string_iol)
-    connection_iol = engine_iol.connect()
+    
     res = connection_iol.execute(query)
     dehors = res.fetchall()
     return dehors
@@ -105,8 +106,8 @@ def populateDB(app):
         except Exception as e:
             print "\t Errore nell'esecuzione del workflow sul documento %s" %id         
             print str(e)
-        try:
-            saveData(doc)
+        
+            saveData(doc,connection_iol,'istanze','occupazione_suolo',workflowTool)
             
         except Exception as e:
             print "\t Errore nel salvataggio del documento %s" %id
