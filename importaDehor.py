@@ -136,7 +136,7 @@ def populateDB(app):
             print "\t Errore nell'esecuzione del workflow sul documento %s" %id         
             print str(e)
         
-        try
+        try:
             doc.setItem('Form','frm_dehor_base')
             saveData(doc,connection_iol,'istanze_test','occupazione_suolo',workflowTool)
             
