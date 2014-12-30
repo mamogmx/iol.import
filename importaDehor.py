@@ -23,7 +23,7 @@ connection_iol = engine_iol.connect()
 
 def getDocuments(doc):
     id = doc.getId()
-    path = "%s/%s" %(doc_base_path,id)
+    path = "%s" %(doc_base_path)
     idpratica = str(doc.getItem('idpratica',''))
     if os.path.exists(path):
         listDocs = [ f for f in os.listdir(path) if re.match(r'%s_*\.PDF' %idpratica, f) ]
@@ -38,6 +38,8 @@ def getDocuments(doc):
             doc.setfile(text,filename=name,contenttype='application/pdf')
 
         print "\tRecuperati %s file su %s" %(i,tot)
+    else:
+        print "\t Path %s non trovato" %path
     return 1
         
 def getData():
@@ -123,11 +125,13 @@ def populateDB(app):
             # Setting Roles
             doc.manage_setLocalRoles('istruttori-dehor', ["iol-reviewer",])
             doc.manage_setLocalRoles('rup-dehor', ["iol-manager",])
+            print "\t Assegnati Ruoli Correttamente"
         except Exception as e:
             print "\t Errore nel salvataggio dei ruoli del documento %s" %id
             print str(e)
         try:
             workflowTool.doActionFor(doc, 'autorizza_importazione')
+            print "\t Transizione 'autorizza_importazione effettuata correttamente'"
         except Exception as e:
             print "\t Errore nell'esecuzione del workflow sul documento %s" %id         
             print str(e)
