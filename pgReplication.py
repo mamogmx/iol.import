@@ -26,13 +26,14 @@ def getIolRoles(doc):
     return result
 
 class plominoData(object):
-    def __init__(self, id, plominodb, form, owner, url, review_state, review_history,iol_owner,iol_reviewer,iol_manager, data):
+    def __init__(self, id, plominodb, form, owner, path, url, review_state, review_history,iol_owner,iol_reviewer,iol_manager, data):
         self.id = id
         self.plominoform = form
         self.plominodb = plominodb
         self.owner = owner
         self.review_state = review_state
         self.review_history = review_history
+        self.path = path
         self.url = url
         self.iol_owner = iol_owner
         self.iol_reviewer = iol_reviewer
@@ -95,6 +96,7 @@ def saveData(doc,db,sk,tb,wf):
     #initialize object plominoData
     
     id = doc.getId()
+    d['id'] = id
     roles = getIolRoles(doc)
     data = dict(
         id = id,
@@ -102,6 +104,7 @@ def saveData(doc,db,sk,tb,wf):
         plominodb = doc.getParentDatabase().id,
         owner = doc.getOwner().getUserName(),
         url = doc.absolute_url(),
+        path = doc.getPhysicalPath()[1:]
         review_state = wf.getInfoFor(doc,'review_state'),
         review_history = wf.getInfoFor(doc,'review_history'),
         iol_owner = roles['iol_owner'],
@@ -110,7 +113,7 @@ def saveData(doc,db,sk,tb,wf):
         data = d
     )
     try:    
-        row = plominoData(data['id'],data['plominodb'],data['plominoform'],data['owner'],data["url"], data["review_state"], data["review_history"],data['iol_owner'],data['iol_reviewer'],data['iol_manager'],d)
+        row = plominoData(data['id'], data['plominodb'], data['plominoform'], data['owner'], data['path'], data["url"], data["review_state"], data["review_history"],data['iol_owner'],data['iol_reviewer'],data['iol_manager'],d)
         session = Sess()
         #deleting row from database
         session.query(plominoData).filter_by(id=id).delete()

@@ -4,7 +4,7 @@ import sqlalchemy.orm as orm
 import DateTime
 import urllib
 import os
-import time
+import re
 import datetime
 
 from Products.CMFPlomino.PlominoUtils import DateToString,Now,StringToDate
@@ -15,10 +15,30 @@ from plone import api
 from Products.CMFCore.WorkflowCore import WorkflowException
 from pgReplication import *
 
-conn_string_iol = "postgres://postgres:postgres@192.168.1.71:5435/sitar"
+doc_base_path = '/var/backups/dehor_doc/dehor_pdf/'
+conn_string_iol = "postgres://postgres:postgres@10.95.10.27/sitar"
 engine_iol = sql.create_engine(conn_string_iol)
 connection_iol = engine_iol.connect()
-    
+
+
+def getDocuments(doc):
+    id = doc.getId()
+    path = "%s/%s" %(doc_base_path,id)
+    idpratica = str(doc.getItem('idpratica',''))
+    if os.path.exists(path):
+        listDocs = [ f for f in os.listdir(path) if re.match(r'%s_*\.PDF' %idpratica, f) ]
+        tot = len(listDocs)
+        i = 0
+        for name in listDocs:
+
+            i += 1
+            f = open("%s/%s" %(path,name),'r')
+            text = f.read()
+            f.close()
+            doc.setfile(text,filename=name,contenttype='application/pdf')
+
+        print "\tRecuperati %s file su %s" %(i,tot)
+    return 1
         
 def getData():
     query = """
@@ -41,7 +61,7 @@ with attivita as (SELECT "IDPratica" as idpratica, "Numero" as numero_pratica, "
   FROM dehor_intesta),
   dati as (SELECT "IDPratica" as idpratica, "IndirizzoOccupazione" as via,
        "CivicoOccupazione" as civico, "DataLicenza"::timestamp as data_licenza, "NumeroLicenza" as numero_licenza, "QualitaRichiedente" as fisica_titolo,
-       "TipoLicenza" as tipo_licenza, "DallaData"::timestamp as autorizzata_dal, "AllaData"::timestamp as autorizzata_al, "SupLocali" as superficie_interna, "PeriodoOccupazione"
+       "TipoLicenza" as tipo_licenza, "DallaData"::timestamp as autorizzata_dal, "AllaData"::timestamp as autorizzata_al, "SupLocali" as superficie_interna, case when ("PeriodoOccupazione"='Permante') then 'annuale' else 'temporanea' end as durata_occupazione
   FROM dehor_dati),
   geom as (SELECT idpratica,array_agg('SRID=4326;'||st_astext(st_transform(the_geom,4326))) as geometry_list from dehor_geom group by idpratica),
   pagamenti as (SELECT "IDPratica" as idpratica,coalesce(dovuto,0) as dovuto,coalesce(pagato,-1) as pagato FROM dehor_pagamenti)
@@ -71,7 +91,7 @@ def populateDB(app):
         dehor = dict(r)
         doc = plominodb.createDocument()
         id = doc.getId()
-        print "%d)Preso in considerazione il document %s" %(i,id)
+        print "%d)Preso in considerazione il documento %s" %(i,id)
         doc.setItem('iol_tipo_app','dehor')
         doc.setItem('iol_tipo_pratica','dehor_base')
         doc.setItem('iol_tipo_richiesta','base')
@@ -83,6 +103,8 @@ def populateDB(app):
                     doc.setItem(key,val)
                 elif key in ('dovuto','pagato'):
                     doc.setItem('pagamenti_saldo',-1 * ((dehor['dovuto'] or 0) - (dehor['pagato'] or -1)))
+                    doc.setItem(key,val)
+
                 elif key in ('search_richiedente'):
                     doc.setItem(key,"%s %s" %(val,dehor['giuridica_denominazione']))
                 else:
