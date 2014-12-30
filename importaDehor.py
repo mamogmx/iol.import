@@ -78,11 +78,14 @@ select * from attivita inner join autorizzazioni using(idpratica) inner join dat
 def changeOwner(app):
     psite = app.unrestrictedTraverse("istanze")
     plominodb = psite.iol_dehor
+    mt = getToolByName(psite, 'portal_membership')
     owner = mt.getMemberById('mamo')
+    i = 1
     for doc in plominodb.getAllDocuments():
         doc.changeOwnership(owner, recursive=False)
         doc.setCreators(['mamo'])
-
+        print "%d) Modificato Owner a documento %s" %(i,doc.getId())
+        i += 1
 
 def populateDB(app):
     psite = app.unrestrictedTraverse("istanze")
