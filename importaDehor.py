@@ -117,7 +117,7 @@ def populateDB(app):
         except Exception as e:
             print "\t Errore nel salvataggio dei dati del documento %s" %id
             print str(e)
-        doc.setItem('Form','frm_dehor_base')
+
         getDocuments(doc)
 
         try:
@@ -136,6 +136,8 @@ def populateDB(app):
             print "\t Errore nell'esecuzione del workflow sul documento %s" %id         
             print str(e)
         
+        try
+            doc.setItem('Form','frm_dehor_base')
             saveData(doc,connection_iol,'istanze_test','occupazione_suolo',workflowTool)
             
         except Exception as e:
