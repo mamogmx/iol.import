@@ -75,6 +75,15 @@ select * from attivita inner join autorizzazioni using(idpratica) inner join dat
     dehors = res.fetchall()
     return dehors
 
+def changeOwner(app):
+    psite = app.unrestrictedTraverse("istanze")
+    plominodb = psite.iol_dehor
+    owner = mt.getMemberById('mamo')
+    for doc in plominodb.getAllDocuments():
+        doc.changeOwnership(owner, recursive=False)
+        doc.setCreators(['mamo'])
+
+
 def populateDB(app):
     psite = app.unrestrictedTraverse("istanze")
     plominodb = psite.iol_dehor
@@ -152,7 +161,7 @@ if "app" in locals():
     admin=app.acl_users.getUserById("admin")
 
     newSecurityManager(None, admin)
-    res = populateDB(app)
+    res = changeOwner(app)
 
     import transaction;
     transaction.commit()
