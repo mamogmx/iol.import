@@ -115,6 +115,9 @@ def populateDB(app):
         except Exception as e:
             print "\t Errore nel salvataggio dei dati del documento %s" %id
             print str(e)
+
+        getDocuments(doc)
+
         try:
             doc.changeOwnership(owner, recursive=False)
             # Setting Roles
