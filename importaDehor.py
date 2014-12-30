@@ -26,7 +26,7 @@ def getDocuments(doc):
     path = "%s" %(doc_base_path)
     idpratica = str(doc.getItem('idpratica',''))
     if os.path.exists(path):
-        listDocs = [ f for f in os.listdir(path) if re.match(r'%s_*\.PDF' %idpratica, f) ]
+        listDocs = [ f for f in os.listdir(path) if f.startswith('%s_' %idpratica)]
         tot = len(listDocs)
         i = 0
         for name in listDocs:
@@ -117,7 +117,7 @@ def populateDB(app):
         except Exception as e:
             print "\t Errore nel salvataggio dei dati del documento %s" %id
             print str(e)
-
+        doc.setItem('Form','frm_dehor_base')
         getDocuments(doc)
 
         try:
