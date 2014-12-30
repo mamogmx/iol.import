@@ -102,7 +102,7 @@ def saveData(doc,db,sk,tb,wf):
         id = id,
         plominoform = doc.getForm().getFormName(),
         plominodb = doc.getParentDatabase().id,
-        owner = '',
+        owner = doc.getOwner().getUserName(),
         url = doc.absolute_url(),
         path = doc.getPhysicalPath()[1:],
         review_state = wf.getInfoFor(doc,'review_state'),
