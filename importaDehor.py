@@ -84,7 +84,7 @@ def populateDB(app):
     mt = getToolByName(psite, 'portal_membership')
     pg = getToolByName(psite, 'portal_groups')
     owner = pg.getGroupById('istruttori-dehor')
-    owner = pg.getUserById('mamo')
+    owner = mt.getUserById('mamo')
     result = list()
     i = 1
     res = getData()
